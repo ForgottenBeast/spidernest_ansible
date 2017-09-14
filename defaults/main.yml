@@ -1,0 +1,10 @@
+SP_DB_VOLUME: spidernest_db_data
+
+spidernest_mailer_env:
+  IMAP_SERVER: imap.gmail.com
+  IMAP_PORT: 993
+  SMTP_SERVER: smtp.gmail.com
+  SMTP_PORT: 587
+  MAIL_LOGIN: user@gmail.com
+  MAIL_PW: password
+  PYTHONPATH: /usr/local/lib/python2.7/site-packages

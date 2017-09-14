@@ -1,0 +1,48 @@
+- name: "check if spidernest db volume exists"
+  command: docker volume inspect {{ SP_DB_VOLUME }}
+  become: True
+  register: myvolume_exists
+  failed_when: false
+
+- name: "create spidernest db volume"
+  command: docker volume create --name {{ SP_DB_VOLUME }}
+  become: True
+  when: myvolume_exists|failed
+
+- name: "Create service"
+  docker_service:
+    project_name: spidernest
+    definition:
+      version: "2"
+
+      services:
+        mq:
+          restart: always
+          image: rabbitmq:management-alpine
+          expose:
+            - "5672/tcp"
+           
+        db:
+          restart: always
+          image: forgottenbeast/spider_nest:db
+          environment:
+            - PYTHONPATH=/usr/local/lib/python2.7/dist-packages:/usr/local/lib/python2.7/site-packages
+          volumes:
+            - "{{ SP_DB_VOLUME }}:/db"
+          links:
+            - mq
+      
+        scraper:
+          restart: always
+          image: forgottenbeast/spider_nest:scraper
+          environment:
+            - PYTHONPATH=/usr/local/lib/python2.7/dist-packages:/usr/local/lib/python2.7/site-packages
+          links:
+            - mq
+      
+        mailer:
+          restart: always
+          image: forgottenbeast/spider_nest:mailer
+          environment: "{{ spidernest_mailer_env }}"
+          links:
+            - mq
