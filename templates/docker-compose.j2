@@ -1,0 +1,43 @@
+version: "2"
+volumes:
+  {{ SP_DB_VOLUME }}:
+    external: True
+services:
+  mq:
+    restart: always
+    image: rabbitmq:management-alpine
+    expose:
+      - "5672/tcp"
+     
+  db:
+    restart: always
+    image: forgottenbeast/spider_nest:db
+    environment:
+      - PYTHONPATH=/usr/local/lib/python2.7/dist-packages:/usr/local/lib/python2.7/site-packages
+    volumes:
+      - "{{ SP_DB_VOLUME }}:/db"
+    links:
+      - mq
+
+  scraper:
+    restart: always
+    image: forgottenbeast/spider_nest:scraper
+    environment:
+      - PYTHONPATH=/usr/local/lib/python2.7/dist-packages:/usr/local/lib/python2.7/site-packages
+    links:
+      - mq
+
+  mailer:
+    restart: always
+    image: forgottenbeast/spider_nest:mailer
+    environment:
+      - IMAP_SERVER={{ spidernest_mailer_env.IMAP_SERVER }}
+      - IMAP_PORT={{ spidernest_mailer_env.IMAP_PORT }}
+      - SMTP_SERVER={{ spidernest_mailer_env.SMTP_SERVER }}
+      - SMTP_PORT={{ spidernest_mailer_env.SMTP_PORT }}
+      - MAIL_LOGIN={{ spidernest_mailer_env.MAIL_LOGIN }}
+      - MAIL_PW={{ spidernest_mailer_env.MAIL_PW }}
+      - PYTHONPATH={{ spidernest_mailer_env.PYTHONPATH }}
+
+    links:
+      - mq

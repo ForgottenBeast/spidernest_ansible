@@ -10,44 +10,28 @@
   when: myvolume_exists|failed
 
 - name: "Create spidernest directories"
+  become: True
   command: |
     docker run --rm -i -v {{ SP_DB_VOLUME }}:/db {{ alpine_image }} ash -c \
       "mkdir -p /db/database /db/dblogs"
 
-- name: "Create service"
-  docker_service:
-    project_name: spidernest
-    definition:
-      version: "2"
+- name: "Create project dir"
+  file:
+    name: /tmp/spidernest
+    state: directory
 
-      services:
-        mq:
-          restart: always
-          image: rabbitmq:management-alpine
-          expose:
-            - "5672/tcp"
-           
-        db:
-          restart: always
-          image: forgottenbeast/spider_nest:db
-          environment:
-            - PYTHONPATH=/usr/local/lib/python2.7/dist-packages:/usr/local/lib/python2.7/site-packages
-          volumes:
-            - "{{ SP_DB_VOLUME }}:/db"
-          links:
-            - mq
-      
-        scraper:
-          restart: always
-          image: forgottenbeast/spider_nest:scraper
-          environment:
-            - PYTHONPATH=/usr/local/lib/python2.7/dist-packages:/usr/local/lib/python2.7/site-packages
-          links:
-            - mq
-      
-        mailer:
-          restart: always
-          image: forgottenbeast/spider_nest:mailer
-          environment: "{{ spidernest_mailer_env }}"
-          links:
-            - mq
+- name: "Copy dockerfile"
+  template:
+    src: docker-compose.j2
+    dest: /tmp/spidernest/docker-compose.yml
+
+- name: "Create service"
+  become: True
+  docker_service:
+    state: present
+    project_src: /tmp/spidernest
+
+- name: "Remove project dir"
+  file:
+    name: /tmp/spidernest
+    state: absent
