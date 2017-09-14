@@ -9,6 +9,11 @@
   become: True
   when: myvolume_exists|failed
 
+- name: "Create spidernest directories"
+  command: |
+    docker run --rm -i -v {{ SP_DB_VOLUME }}:/db {{ alpine_image }} ash -c \
+      "mkdir -p /db/database /db/dblogs"
+
 - name: "Create service"
   docker_service:
     project_name: spidernest
