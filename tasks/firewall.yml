@@ -1,0 +1,14 @@
+- name: "Getting spidernest network conf"
+  command: docker network inspect spidernest_default
+  register: spidnet
+
+- name: "Registering network conf in variable"
+  set_fact:
+    netvar: "{{ spidnet.stdout | from_json }}"
+
+- name: "Allowing connections to the outside"
+  iptables:
+    table: nat
+    chain: POSTROUTING
+    jump: MASQUERADE
+    source: "{{ netvar[0].IPAM.Config[0].Subnet }}"

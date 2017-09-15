@@ -31,6 +31,10 @@
     state: present
     project_src: /tmp/spidernest
 
+- name: "Update firewall configuration"
+  include: firewall.yml
+  become: True
+
 - name: "Remove project dir"
   file:
     name: /tmp/spidernest
