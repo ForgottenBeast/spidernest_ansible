@@ -1,4 +1,5 @@
 - name: "check if spidernest db volume exists"
+  tags: spidernest_volumes
   command: docker volume inspect {{ SP_DB_VOLUME }}
   become: True
   register: myvolume_exists
@@ -6,36 +7,43 @@
 
 - name: "create spidernest db volume"
   command: docker volume create --name {{ SP_DB_VOLUME }}
+  tags: spidernest_volumes
   become: True
   when: myvolume_exists|failed
 
 - name: "Create spidernest directories"
   become: True
+  tags: spidernest_volumes
   command: |
     docker run --rm -i -v {{ SP_DB_VOLUME }}:/db {{ alpine_image }} ash -c \
       "mkdir -p /db/database /db/dblogs"
 
 - name: "Create project dir"
+  tags: spidernest_deploy
   file:
     name: /tmp/spidernest
     state: directory
 
 - name: "Copy dockerfile"
+  tags: spidernest_deploy
   template:
     src: docker-compose.j2
     dest: /tmp/spidernest/docker-compose.yml
 
 - name: "Create service"
+  tags: spidernest_deploy
   become: True
   docker_service:
     state: present
     project_src: /tmp/spidernest
 
 - name: "Update firewall configuration"
+  tags: spidernest_deploy
   include: firewall.yml
   become: True
 
 - name: "Remove project dir"
+  tags: spidernest_deploy
   file:
     name: /tmp/spidernest
     state: absent
